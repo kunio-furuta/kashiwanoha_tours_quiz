@@ -181,7 +181,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Zen Maru Gothic',s
   background:linear-gradient(180deg,#42A5F5,#1E88E5);
   color:#fff;border:none;border-radius:30px;padding:11px 36px;
   font-size:1.05em;font-weight:900;font-family:inherit;cursor:pointer;
-  box-shadow:0 4px 15px rgba(30,136,229,0.3);flex-shrink:0;z-index:1;margin-bottom:12px;
+  box-shadow:0 4px 15px rgba(30,136,229,0.3);flex-shrink:0;z-index:1;margin-bottom:24px;
 }
 .next-btn:active{transform:translateY(2px)}
 
@@ -306,6 +306,63 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Zen Maru Gothic',s
 }
 .ranking-footer-btn:active{transform:translateY(2px)}
 
+/* Admin area */
+.admin-area{
+  width:100%;text-align:center;margin:4px 0 20px;z-index:1;
+}
+.admin-trigger{
+  background:none;border:none;color:#BFAE9A;font-size:0.7em;
+  font-family:inherit;cursor:pointer;padding:8px 16px;
+  opacity:0.5;transition:opacity 0.3s;
+}
+.admin-trigger:active{opacity:1}
+
+/* Admin overlay & modal */
+.admin-overlay{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.5);z-index:200;
+  justify-content:center;align-items:center;
+}
+.admin-overlay.show{display:flex}
+.admin-modal{
+  background:#fff;border-radius:20px;padding:24px;
+  max-width:340px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.3);
+  animation:modalPop 0.3s ease;
+}
+@keyframes modalPop{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+.admin-modal-title{
+  font-size:1.2em;font-weight:900;color:#5D4037;text-align:center;margin-bottom:12px;
+}
+.admin-modal-body{text-align:center;font-size:0.95em;color:#555;line-height:1.6}
+.admin-modal-body p{margin:0}
+.admin-confirm-code{
+  font-size:2em;font-weight:900;color:#C62828;letter-spacing:0.3em;
+  background:#FFF3F3;border:2px dashed #EF9A9A;border-radius:10px;
+  padding:8px;margin:8px 0;
+}
+.admin-confirm-input{
+  width:100%;padding:10px;border:2px solid #E0E0E0;border-radius:10px;
+  font-size:1.2em;font-family:inherit;font-weight:700;text-align:center;
+  outline:none;margin-top:4px;
+}
+.admin-confirm-input:focus{border-color:#C62828}
+.admin-confirm-area{margin-top:16px}
+.admin-modal-btns{display:flex;gap:10px;margin-top:20px}
+.admin-btn-cancel{
+  flex:1;padding:12px;border:2px solid #E0E0E0;border-radius:12px;
+  background:#fff;font-size:1em;font-weight:700;font-family:inherit;
+  color:#888;cursor:pointer;
+}
+.admin-btn-cancel:active{background:#F5F5F5}
+.admin-btn-reset{
+  flex:1;padding:12px;border:none;border-radius:12px;
+  background:linear-gradient(180deg,#EF5350,#C62828);
+  font-size:1em;font-weight:900;font-family:inherit;
+  color:#fff;cursor:pointer;
+}
+.admin-btn-reset:active{transform:translateY(1px)}
+.admin-btn-reset:disabled{background:#ccc;color:#999;cursor:default}
+
 /* ========== EFFECTS ========== */
 .confetti-piece{position:fixed;animation:confettiFall 3s linear forwards;pointer-events:none;z-index:100}
 @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
@@ -406,9 +463,30 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Zen Maru Gothic',s
     <div class="ranking-podium" id="ranking-podium"></div>
     <div class="ranking-lower" id="ranking-lower"></div>
     <button class="ranking-footer-btn" onclick="backToTop()">もう一度挑戦！</button>
+    <div class="admin-area">
+      <button class="admin-trigger" id="admin-trigger">⚙️ 管理者メニュー</button>
+    </div>
   </div>
 
-</div>
+  <!-- ADMIN MODAL -->
+  <div class="admin-overlay" id="admin-overlay">
+    <div class="admin-modal">
+      <div class="admin-modal-title">⚠️ 管理者メニュー</div>
+      <div class="admin-modal-body">
+        <p>ランキングデータと参加者数を<br><strong style="color:#C62828">すべてリセット</strong>します。</p>
+        <p style="font-size:0.85em;color:#888;margin-top:8px">この操作は取り消せません。</p>
+        <div class="admin-confirm-area" id="admin-confirm-area" style="display:none">
+          <p style="color:#C62828;font-weight:700;margin-bottom:8px">確認コードを入力してください:</p>
+          <div class="admin-confirm-code" id="admin-confirm-code"></div>
+          <input type="text" class="admin-confirm-input" id="admin-confirm-input" placeholder="上の数字を入力" maxlength="4" inputmode="numeric">
+        </div>
+      </div>
+      <div class="admin-modal-btns">
+        <button class="admin-btn-cancel" onclick="closeAdmin()">キャンセル</button>
+        <button class="admin-btn-reset" id="admin-btn-reset" onclick="startReset()">リセットする</button>
+      </div>
+    </div>
+  </div>
 <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">🔊</button>
 
 <script>
@@ -660,7 +738,7 @@ function selectAnswer(idx){
   else{h='<div class="result-label wrong-label">❌ 不正解...</div><div style="text-align:center;font-weight:700;color:#2E7D32;margin-bottom:6px">正解: '+escHtml(q.choices[q.answer])+'</div>'}
   h+='<div>'+q.explanation+'</div>';eb.innerHTML=h;eb.style.display='block';
   const nb=document.getElementById('next-btn');nb.style.display='block';nb.textContent=currentIndex<9?'次へ':'結果を見る';
-  setTimeout(()=>eb.scrollIntoView({behavior:'smooth',block:'nearest'}),300);
+  setTimeout(function(){nb.scrollIntoView({behavior:'smooth',block:'end'})},350);
 }
 
 function handleTimeout(){
@@ -671,7 +749,7 @@ function handleTimeout(){
   const eb=document.getElementById('explanation-box');
   eb.innerHTML='<div class="result-label timeout-label">⏰ 時間切れ！</div><div style="text-align:center;font-weight:700;color:#2E7D32;margin-bottom:6px">正解: '+escHtml(q.choices[q.answer])+'</div><div>'+q.explanation+'</div>';
   eb.style.display='block';const nb=document.getElementById('next-btn');nb.style.display='block';nb.textContent=currentIndex<9?'次へ':'結果を見る';
-  setTimeout(()=>eb.scrollIntoView({behavior:'smooth',block:'nearest'}),300);
+  setTimeout(function(){nb.scrollIntoView({behavior:'smooth',block:'end'})},350);
 }
 function nextQuestion(){currentIndex++;if(currentIndex>=10)showResult();else showQuestion()}
 
@@ -750,12 +828,76 @@ function showRanking(){
   showScreen('ranking-screen');
 }
 
+// ===== ADMIN RESET =====
+var adminConfirmCode='';
+var adminLongPressTimer=null;
+
+function initAdminTrigger(){
+  var btn=document.getElementById('admin-trigger');
+  // Long press (3 seconds) to open admin menu
+  btn.addEventListener('touchstart',function(e){
+    e.preventDefault();
+    adminLongPressTimer=setTimeout(function(){openAdmin()},3000);
+  });
+  btn.addEventListener('touchend',function(){clearTimeout(adminLongPressTimer)});
+  btn.addEventListener('touchcancel',function(){clearTimeout(adminLongPressTimer)});
+  // Mouse fallback for PC
+  btn.addEventListener('mousedown',function(){
+    adminLongPressTimer=setTimeout(function(){openAdmin()},3000);
+  });
+  btn.addEventListener('mouseup',function(){clearTimeout(adminLongPressTimer)});
+  btn.addEventListener('mouseleave',function(){clearTimeout(adminLongPressTimer)});
+}
+
+function openAdmin(){
+  adminConfirmCode=String(Math.floor(1000+Math.random()*9000));
+  document.getElementById('admin-confirm-code').textContent=adminConfirmCode;
+  document.getElementById('admin-confirm-input').value='';
+  document.getElementById('admin-confirm-area').style.display='none';
+  document.getElementById('admin-btn-reset').textContent='リセットする';
+  document.getElementById('admin-btn-reset').disabled=false;
+  document.getElementById('admin-btn-reset').onclick=startReset;
+  document.getElementById('admin-overlay').classList.add('show');
+}
+
+function closeAdmin(){
+  document.getElementById('admin-overlay').classList.remove('show');
+}
+
+function startReset(){
+  // Show confirm code input
+  document.getElementById('admin-confirm-area').style.display='block';
+  document.getElementById('admin-btn-reset').textContent='確認して削除';
+  document.getElementById('admin-btn-reset').onclick=executeReset;
+  document.getElementById('admin-confirm-input').focus();
+}
+
+async function executeReset(){
+  var input=document.getElementById('admin-confirm-input').value.trim();
+  if(input!==adminConfirmCode){
+    document.getElementById('admin-confirm-input').style.borderColor='#C62828';
+    document.getElementById('admin-confirm-input').value='';
+    document.getElementById('admin-confirm-input').placeholder='コードが違います';
+    setTimeout(function(){
+      document.getElementById('admin-confirm-input').style.borderColor='#E0E0E0';
+      document.getElementById('admin-confirm-input').placeholder='上の数字を入力';
+    },1500);
+    return;
+  }
+  // Reset all data
+  ranking=[];totalPlayers=0;
+  try{localStorage.removeItem('quiz-ranking-v2')}catch(e){}
+  try{await saveRanking()}catch(e){}
+  closeAdmin();
+  showRanking();
+}
+
 function backToTop(){showScreen('top-screen')}
 
 window.addEventListener('DOMContentLoaded',async function(){
   document.getElementById('top-leafy').src=IMAGES['leafy1'];
   document.getElementById('top-kasshy').src=IMAGES['kasshy7'];
-  createLeaves();createSakura();
+  createLeaves();createSakura();initAdminTrigger();
   loadRankingSync();
   try{await loadRanking()}catch(e){}
 });
